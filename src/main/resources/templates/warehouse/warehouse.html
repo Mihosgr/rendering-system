@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Αποθήκη (Warehouse)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+        .filter-card {
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border: 1px solid #333;
+            border-radius: 12px;
+        }
+        .table-dark-custom { background-color: #1e1e1e; }
+        .text-monospace { font-family: 'Courier New', Courier, monospace; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0 text-info"><i class="bi bi-box-seam me-2"></i>Αποθήκη Προϊόντων</h3>
+
+        <!-- Κάρτα Συνοπτικών Στοιχείων (KPIs Αναζήτησης) -->
+        <div class="d-flex gap-3">
+            <div class="bg-dark border border-secondary rounded px-3 py-2 text-center shadow-sm">
+                <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Πλήθος Σάκων</small>
+                <span class="fs-5 fw-bold text-light" th:text="${bagCount}">0</span>
+            </div>
+            <div class="bg-dark border border-secondary rounded px-3 py-2 text-center shadow-sm">
+                <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Συνολικό Βάρος</small>
+                <span class="fs-5 fw-bold text-info" th:text="${#numbers.formatDecimal(totalWeight, 1, 'COMMA', 0, 'POINT')} + ' kg'">0 kg</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Φόρμα Φίλτρων -->
+    <div class="filter-card p-3 mb-4 shadow-sm">
+        <!-- ΔΙΟΡΘΩΣΗ: th:action="@{/warehouse}" -->
+        <form th:action="@{/warehouse}" method="get" class="row g-3 align-items-end">
+
+            <div class="col-md-2">
+                <label class="form-label text-muted fw-bold small">Από Ημερομηνία</label>
+                <input type="date" class="form-control form-control-sm bg-dark text-light border-secondary" name="startDate" th:value="${startDate}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label text-muted fw-bold small">Έως Ημερομηνία</label>
+                <input type="date" class="form-control form-control-sm bg-dark text-light border-secondary" name="endDate" th:value="${endDate}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label text-muted fw-bold small">Είδος</label>
+                <select class="form-select form-select-sm bg-dark text-light border-secondary" name="productType">
+                    <option value="">Όλα</option>
+                    <option value="OFFAL_MEAL" th:selected="${selectedProductType != null and selectedProductType.name() == 'OFFAL_MEAL'}">Πτηνάλευρο</option>
+                    <option value="FEATHER_MEAL" th:selected="${selectedProductType != null and selectedProductType.name() == 'FEATHER_MEAL'}">Πτεράλευρο</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label text-muted fw-bold small">Κατάσταση</label>
+                <select class="form-select form-select-sm bg-dark text-light border-secondary" name="status">
+                    <option value="">Όλες</option>
+                    <option value="ACTIVE" th:selected="${selectedStatus != null and selectedStatus.name() == 'ACTIVE'}">Ενεργό</option>
+                    <option value="PENDING_EXPORT" th:selected="${selectedStatus != null and selectedStatus.name() == 'PENDING_EXPORT'}">Αναμονή Φόρτωσης</option>
+                    <option value="EXPORTED" th:selected="${selectedStatus != null and selectedStatus.name() == 'EXPORTED'}">Εξήχθη</option>
+                    <option value="VOIDED" th:selected="${selectedStatus != null and selectedStatus.name() == 'VOIDED'}">Ακυρωμένο (VOID)</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label text-muted fw-bold small">LOT ή QR Code</label>
+                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary" name="searchTerm" th:value="${searchTerm}" placeholder="Αναζήτηση...">
+            </div>
+
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-info text-dark fw-bold w-100"><i class="bi bi-search me-1"></i>Αναζήτηση</button>
+                <!-- ΔΙΟΡΘΩΣΗ: th:href="@{/warehouse}" -->
+                <a th:href="@{/warehouse}" class="btn btn-sm btn-outline-secondary w-100">Καθαρισμός</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Πίνακας Δεδομένων -->
+    <div class="card bg-transparent border-0 shadow-sm">
+        <div class="card-body p-0 rounded overflow-hidden border border-secondary">
+            <table class="table table-dark table-hover mb-0 align-middle text-center" style="font-size: 0.9rem;">
+                <thead class="table-dark-custom text-uppercase small text-muted border-secondary">
+                <tr>
+                    <th>Ημερομηνία Παραγωγής</th>
+                    <th>LOT Number (QR)</th>
+                    <th>Είδος Προϊόντος</th>
+                    <th>Βάρος (kg)</th>
+                    <th>Κατάσταση</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="bag : ${bags}">
+                    <td th:text="${#temporals.format(bag.batch.dailyProduction.productionDate, 'dd/MM/yyyy')}"></td>
+                    <td>
+                        <strong class="text-info text-monospace d-block" th:text="${bag.lotNumber}"></strong>
+                        <small class="text-muted text-monospace" style="font-size: 0.75rem;" th:text="${bag.qrCode}"></small>
+                    </td>
+                    <td>
+                        <span th:if="${bag.batch.productType.name() == 'OFFAL_MEAL'}" class="badge bg-warning text-dark fw-bold">Πτηνάλευρο</span>
+                        <span th:if="${bag.batch.productType.name() == 'FEATHER_MEAL'}" class="badge bg-info text-dark fw-bold">Πτεράλευρο</span>
+                    </td>
+                    <td class="fw-bold text-light" th:text="${bag.weight} + ' kg'"></td>
+                    <td>
+                        <span th:if="${bag.status.name() == 'ACTIVE'}" class="badge bg-success fw-bold"><i class="bi bi-check-circle me-1"></i>Ενεργό</span>
+                        <span th:if="${bag.status.name() == 'VOIDED'}" class="badge bg-danger fw-bold"><i class="bi bi-x-circle me-1"></i>Ακυρωμένο</span>
+                        <span th:if="${bag.status.name() == 'PENDING_EXPORT'}" class="badge bg-warning text-dark fw-bold"><i class="bi bi-hourglass-split me-1"></i>Αναμονή</span>
+                        <span th:if="${bag.status.name() == 'EXPORTED'}" class="badge bg-secondary fw-bold"><i class="bi bi-truck me-1"></i>Εξήχθη</span>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(bags)}">
+                    <td colspan="5" class="text-muted py-5 text-center">Δεν βρέθηκαν σάκοι με τα επιλεγμένα κριτήρια.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

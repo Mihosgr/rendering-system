@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Management Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+        .kpi-card {
+            background: linear-gradient(145deg, #1e1e1e, #2a2a2a);
+            border: 1px solid #333;
+            border-radius: 12px;
+            transition: transform 0.2s;
+        }
+        .kpi-card:hover { transform: translateY(-5px); border-color: #555; }
+        .text-glow-info { color: #0dcaf0; text-shadow: 0 0 10px rgba(13,202,240,0.5); }
+        .text-glow-success { color: #198754; text-shadow: 0 0 10px rgba(25,135,84,0.5); }
+        .text-glow-warning { color: #ffc107; text-shadow: 0 0 10px rgba(255,193,7,0.5); }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4">
+    <!-- Φίλτρα Χρόνου -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="bi bi-cpu text-info"></i> Αναλυτικά Δεδομένα Παραγωγής</h3>
+        <div class="btn-group shadow-sm">
+            <a th:href="@{/dashboard(filter='7')}" class="btn btn-outline-secondary" th:classappend="${filter == '7'} ? 'active' : ''">7 Ημέρες</a>
+            <a th:href="@{/dashboard(filter='30')}" class="btn btn-outline-secondary" th:classappend="${filter == '30'} ? 'active' : ''">30 Ημέρες</a>
+            <a th:href="@{/dashboard(filter='365')}" class="btn btn-outline-secondary" th:classappend="${filter == '365'} ? 'active' : ''">1 Έτος</a>
+            <a th:href="@{/dashboard(filter='all')}" class="btn btn-outline-info" th:classappend="${filter == 'all'} ? 'active' : ''">All Time</a>
+        </div>
+    </div>
+
+    <!-- 1η Γραμμή: Κύρια Προϊόντα & Απόδοση -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="kpi-card p-4 border-bottom border-success border-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="text-uppercase text-success fw-bold"><i class="bi bi-box-seam"></i> Πτηνάλευρο</h6>
+                    <h3 class="fw-bold" th:text="${#numbers.formatDecimal(totalOffalMeal, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h3>
+                </div>
+                <small class="text-muted mt-2">Από <span th:text="${countOffalBatches}">0</span> Batches</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-4 border-bottom border-secondary border-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="text-uppercase text-secondary fw-bold"><i class="bi bi-feather"></i> Πτεράλευρο</h6>
+                    <h3 class="fw-bold" th:text="${#numbers.formatDecimal(totalFeatherMeal, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h3>
+                </div>
+                <small class="text-muted mt-2">Από <span th:text="${countFeatherBatches}">0</span> Batches</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-4 border-bottom border-warning border-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <h6 class="text-uppercase text-warning fw-bold"><i class="bi bi-droplet-half"></i> Πτηνέλαιο</h6>
+                    <h3 class="fw-bold text-glow-warning mb-0" th:text="${#numbers.formatDecimal(totalOilProduced, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-4 border-bottom border-info border-3 text-center h-100 d-flex flex-column justify-content-center">
+                <h6 class="text-uppercase text-muted fw-bold">Απόδοση Πτηνάλευρου</h6>
+                <h2 class="fw-bold text-glow-info mb-0" th:text="${offalYield} + ' %'">0.00 %</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2η Γραμμή: Δευτερεύοντα Δεδομένα Φορτώματος & Επεξεργασίας -->
+    <div class="row g-4 mb-4 justify-content-start">
+        <div class="col-md-3">
+            <div class="kpi-card p-3 text-center border border-secondary shadow-sm">
+                <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem;">Φόρτωμα Μαλακών Ιστών</h6>
+                <h5 class="fw-bold mb-0 text-light" th:text="${#numbers.formatDecimal(totalOffalRaw, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-3 text-center border border-secondary shadow-sm">
+                <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem;">Επεξ/νοι Μαλακοί Ιστοί</h6>
+                <h5 class="fw-bold mb-0 text-light" th:text="${#numbers.formatDecimal(totalOffalProcessed, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-3 text-center border border-secondary shadow-sm">
+                <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem;">Φόρτωμα Πούπουλων</h6>
+                <h5 class="fw-bold mb-0 text-light" th:text="${#numbers.formatDecimal(totalFeatherRaw, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h5>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card p-3 text-center border border-secondary shadow-sm">
+                <h6 class="text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem;">Επεξ/να Πούπουλα</h6>
+                <h5 class="fw-bold mb-0 text-light" th:text="${#numbers.formatDecimal(totalFeatherProcessed, 1, 'COMMA', 0, 'POINT')} + ' kg'">0</h5>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

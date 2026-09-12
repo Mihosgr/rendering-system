@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Διαχείριση Χρηστών</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+        .table-dark-custom { background-color: #1e1e1e; }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0 text-info"><i class="bi bi-people me-2"></i> Διαχείριση Χρηστών</h3>
+            <small class="text-muted">Διαχείριση λογαριασμών και ρόλων</small>
+        </div>
+        <a th:href="@{/users/new}" class="btn btn-primary fw-bold">
+            <i class="bi bi-person-plus"></i> Νέος Χρήστης
+        </a>
+    </div>
+
+    <div class="card bg-transparent border-0 shadow-sm">
+        <div class="card-body p-0 rounded overflow-hidden border border-secondary">
+            <table class="table table-dark table-hover mb-0 align-middle text-center">
+                <thead class="table-dark-custom text-uppercase small text-muted">
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Ονοματεπώνυμο</th>
+                    <th>Ρόλος</th>
+                    <th>Ενέργειες</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users}">
+                    <td class="text-muted" th:text="${user.id}"></td>
+                    <td class="fw-bold" th:text="${user.username}"></td>
+                    <td th:text="${user.fullName}"></td>
+                    <td>
+                        <span class="badge bg-secondary" th:text="${roles[user.role]}"></span>
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <!-- Κουμπί Ιστορικού -->
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" th:data-bs-target="'#historyModal-' + ${user.id}" title="Ιστορικό Συνδέσεων">
+                                <i class="bi bi-clock-history"></i>
+                            </button>
+
+                            <!-- Κουμπί Επεξεργασίας -->
+                            <a th:href="@{'/users/edit/' + ${user.id}}" class="btn btn-sm btn-outline-warning" title="Επεξεργασία">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+
+                            <!-- Κουμπί Διαγραφής (Εμφανίζεται ΜΟΝΟ αν ΔΕΝ είναι ο admin) -->
+                            <form th:if="${user.username != 'admin'}"
+                                  th:action="@{'/users/delete/' + ${user.id}}"
+                                  method="post"
+                                  class="d-inline"
+                                  onsubmit="return confirm('Οριστική διαγραφή του χρήστη;');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Διαγραφή">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Modal Ιστορικού Συνδέσεων -->
+                        <div class="modal fade text-start" th:id="'historyModal-' + ${user.id}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content bg-dark text-light border-secondary">
+                                    <div class="modal-header border-secondary">
+                                        <h5 class="modal-title text-info"><i class="bi bi-clock-history"></i> Τελευταίες 20 Συνδέσεις: <span th:text="${user.username}"></span></h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body p-0">
+                                        <table class="table table-dark table-striped mb-0 text-center small">
+                                            <thead class="text-muted">
+                                            <tr><th>Ημερομηνία & Ώρα</th><th>IP Address</th><th>Συσκευή / Browser</th></tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr th:each="log : ${loginHistories[user.id]}">
+                                                <td th:text="${log.getFormattedLoginTime()}"></td>
+                                                <td th:text="${log.ipAddress}"></td>
+                                                <td class="text-truncate" style="max-width: 250px;" th:title="${log.userAgent}" th:text="${log.userAgent}"></td>
+                                            </tr>
+                                            <tr th:if="${#lists.isEmpty(loginHistories[user.id])}">
+                                                <td colspan="3" class="text-muted py-3">Δεν βρέθηκαν καταγραφές σύνδεσης.</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

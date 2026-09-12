@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="el" xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Καταχώρηση / Επεξεργασία Batch</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #121212; color: #e0e0e0; }
+        .form-section { background-color: #1a1a1a; border: 1px solid #2d2d2d; }
+    </style>
+</head>
+<body>
+
+<!-- ΕΙΣΑΓΩΓΗ NAVBAR -->
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card bg-dark border-secondary shadow-sm">
+                <div class="card-header border-secondary bg-transparent py-3">
+                    <h5 class="mb-0 text-info fw-bold"><i class="bi bi-pencil-square me-2"></i>Στοιχεία Batch</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div th:if="${errorMessage}" class="alert alert-danger fw-bold border-0 shadow-sm" th:text="${errorMessage}"></div>
+
+                    <form th:action="@{/batch/save}" th:object="${batch}" method="post">
+                        <!-- Κρυφό πεδίο ID για την ενημέρωση υπάρχοντος Batch (Edit) -->
+                        <input type="hidden" th:field="*{id}" />
+
+                        <!-- Τα πεδία batchNumber & cookerBatchNumber προστατεύονται ώστε να μην χαθούν στο Edit -->
+                        <input type="hidden" th:field="*{batchNumber}" />
+                        <input type="hidden" th:field="*{cookerBatchNumber}" />
+
+                        <div class="row mb-3">
+                            <!-- ΠΕΔΙΟ ΗΜΕΡΟΜΗΝΙΑΣ -->
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-warning"><i class="bi bi-calendar3 me-1"></i>Ημερομηνία Παραγωγής</label>
+                                <input type="date" class="form-control bg-dark text-light border-secondary" name="productionDate" th:value="${productionDate}" required>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-light"><i class="bi bi-box-seam me-1"></i>Είδος Προϊόντος</label>
+                                <select class="form-select bg-dark text-light border-secondary" th:field="*{productType}">
+                                    <option value="OFFAL_MEAL">Πτηνάλευρο (Offal Meal)</option>
+                                    <option value="FEATHER_MEAL">Πτεράλευρο (Feather Meal)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-light"><i class="bi bi-cpu me-1"></i>Cooker No</label>
+                                <select class="form-select bg-dark text-light border-secondary" th:field="*{cookerId}" required>
+                                    <option value="1">Cooker 1</option>
+                                    <option value="2">Cooker 2</option>
+                                    <option value="3">Cooker 3</option>
+                                    <option value="4">Cooker 4</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label text-muted"><i class="bi bi-clock me-1"></i>Ώρα Φόρτωσης</label>
+                                <input type="time" class="form-control bg-dark text-light border-secondary" th:field="*{loadTime}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-info"><i class="bi bi-clock-history me-1"></i>Ώρα Τέλους (Μαγείρεμα)</label>
+                                <input type="time" class="form-control bg-dark text-light border-secondary" th:field="*{cookEndTime}">
+                            </div>
+                        </div>
+
+                        <hr class="my-4 border-secondary">
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label text-light">Ποσότητα Φόρτωσης (kg)</label>
+                                <input type="number" step="0.1" class="form-control bg-dark text-light border-secondary" th:field="*{rawMaterialWeight}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-light">Προσθήκη Λαδιού (kg)</label>
+                                <input type="number" step="0.1" class="form-control bg-dark text-light border-secondary" th:field="*{addedOilWeight}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label text-info">Ποσότητα Επεξεργασμένου (kg)</label>
+                                <input type="number" step="0.1" class="form-control bg-dark text-light border-secondary" th:field="*{processedQuantity}">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 p-3 rounded form-section">
+                            <div class="col-md-6">
+                                <label class="form-label text-success fw-bold"><i class="bi bi-speedometer me-1"></i>Ζύγιση Τελικού Άλευρου (kg)</label>
+                                <input type="number" step="0.1" class="form-control bg-dark text-light border-secondary" th:field="*{finalMealWeight}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-warning fw-bold"><i class="bi bi-droplet me-1"></i>Τελικό Λάδι Παραγωγής (kg)</label>
+                                <input type="number" step="0.1" class="form-control bg-dark text-light border-secondary" th:field="*{finalOilWeight}">
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Ακύρωση</a>
+                            <button type="submit" class="btn btn-info text-dark fw-bold"><i class="bi bi-check-lg me-1"></i>Αποθήκευση Δεδομένων</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

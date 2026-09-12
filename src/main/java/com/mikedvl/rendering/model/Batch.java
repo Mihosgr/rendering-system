@@ -3,8 +3,8 @@ package com.mikedvl.rendering.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalTime;
+import org.springframework.format.annotation.DateTimeFormat;
 
 @Data
 @NoArgsConstructor
@@ -20,36 +20,34 @@ public class Batch {
     @JoinColumn(name = "daily_production_id", nullable = false)
     private DailyProduction dailyProduction;
 
-    private Integer batchNumber; // Το Α/Α
+    // --- Νέα πεδία για διασύνδεση Zebra & Πίνακα ---
+    private Integer batchNumber; // Γενικός Α/Α (Υπολογίζεται αυτόματα)
+    private Integer cookerId; // "Cooker No" (π.χ. 1, 2, 3)
+    private Integer cookerBatchNumber; // Α/Α του συγκεκριμένου Cooker για τη μέρα
 
     @Enumerated(EnumType.STRING)
     private ProductType productType; // ΠΤΗΝΑΛΕΥΡΟ ή ΠΤΕΡΑΛΕΥΡΟ
 
-    private LocalTime loadTime;
-    private LocalTime cookEndTime;
+    // --- Χρόνοι ---
+    @DateTimeFormat(pattern = "HH:mm")
+    private LocalTime loadTime; // "Ώρα Φόρτωσης"
 
-    // --- Inputs (Φορτώσεις) ---
-    private Double rawMaterialWeight; // Μαλακά ή Φτερά ανάλογα το type
-    private Double addedOilWeight; // Λάδι (βοηθητικό)
-    private Double skinFatWeight; // Λίπος
-    private Double pastaWeight; // Πάστα
-    private Double bonesWeight; // Κόκαλα
-    private Double reworkWeight; // Βάρος από Big Bags που επιστρέφουν
+    @DateTimeFormat(pattern = "HH:mm")
+    private LocalTime cookEndTime; // "Ώρα Τέλους"
 
-    // --- Outputs (Ζυγίσεις) ---
-    private Double cooker1EndWeight;
-    private Double cooker2EndWeight;
-    private Double cooker3EndWeight;
+    // Διάρκεια κάθε batchσε λεπτά
+    private Integer durationMinutes;
 
-    private Double finalMealWeight; // Ζύγιση Μαλακά / Ζύγιση Φτερά
-    private Double finalOilWeight; // Τελικό Λάδι
+    // --- Ποσότητες ---
+    private Integer rawMaterialWeight; // "Ποσότητα Φόρτ. (kg)"
+    private Integer processedQuantity; // "Ποσότητα Επεξ. (kg)"
+    private Integer addedOilWeight; // "Προσθήκη Λαδιού (kg)"
+    private Integer finalMealWeight; // "Άλευρο (kg)"
+    private Integer finalOilWeight; // "Τελικό Λάδι (kg)"
 
-    // Υπολογισμένη απόδοση (Yield) %
-    private Double yieldPercentage;
+    private Double yieldPercentage; // "Απόδοση (%)"
 
     public enum ProductType {
         OFFAL_MEAL, FEATHER_MEAL
     }
-
-    // TODO: Generate Getters and Setters
 }
