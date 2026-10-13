@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <title>Απογραφή & Διασταύρωση Αποθήκης</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body { background-color: #121212; color: #e0e0e0; }
+    .card-custom { background-color: #1a1a1a; border: 1px solid #333; }
+    .text-monospace { font-family: 'Courier New', Courier, monospace; }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="container-fluid px-4 mb-5">
+
+  <!-- Τίτλος & Πληροφορίες Ενεργής Συνεδρίας -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold text-warning mb-0">
+        <i class="bi bi-qr-code-scan me-2"></i>Απογραφή & Διασταύρωση Αποθήκης
+      </h3>
+      <small class="text-muted" th:if="${activeSession != null}">
+        <i class="bi bi-hdd-network me-1 text-info"></i>Ενεργή Συνεδρία:
+        <strong class="text-light" th:text="${activeSession.sessionName}"></strong> |
+        Τελευταία Ενημέρωση: <span class="text-info" th:text="${#temporals.format(activeSession.updatedAt, 'dd/MM/yyyy HH:mm:ss')}"></span>
+      </small>
+    </div>
+
+    <!-- Κουμπιά Διαχείρισης Συνεδρίας -->
+    <div class="d-flex gap-2">
+      <form th:action="@{/inventory/audit/clear}" method="post" class="m-0" onsubmit="return confirm('Είστε σίγουροι ότι θέλετε να ακυρώσετε την ενεργή συνεδρία απογραφής;');">
+        <button type="submit" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-trash me-1"></i>Ακύρωση / Νέα
+        </button>
+      </form>
+      <form th:action="@{/inventory/audit/finalize}" method="post" class="m-0" onsubmit="return confirm('Είστε σίγουροι ότι θέλετε να οριστικοποιήσετε και να κλείσετε αυτή την απογραφή;');">
+        <button type="submit" class="btn btn-success text-dark fw-bold btn-sm">
+          <i class="bi bi-check-all me-1"></i>Οριστικοποίηση & Κλείσιμο
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ενημερωτικά Μηνύματα -->
+  <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm" role="alert">
+    <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i><span th:text="${errorMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Φόρμα Εισαγωγής QR Codes -->
+  <div class="card card-custom p-4 mb-4 shadow-sm">
+    <h5 class="text-info fw-bold mb-3">
+      <i class="bi bi-input-cursor-text me-2"></i>Σάρωση / Επικόλληση QR Codes
+    </h5>
+    <form th:action="@{/inventory/audit/process}" method="post">
+      <div class="mb-3">
+        <label class="form-label text-muted small">
+          Επικολλήστε τα QR codes που σαρώθηκαν στην αποθήκη (ένα ανά γραμμή):
+        </label>
+        <textarea class="form-control bg-dark text-light border-secondary text-monospace"
+                  name="scannedQrs" rows="4"
+                  placeholder="R01010101800001260929120000010950000&#10;R01020101800001260929120100010960000..."
+                  th:text="${rawScannedText}"></textarea>
+      </div>
+      <div class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-warning text-dark fw-bold btn-sm">
+          <i class="bi bi-save me-1"></i>Ενημέρωση & Διασταύρωση
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Αποτελέσματα Διασταύρωσης -->
+  <div th:if="${auditResult != null}">
+
+    <!-- KPIs / Συνοπτικές Κάρτες -->
+    <div class="row g-3 mb-4 text-center">
+      <div class="col-md-3">
+        <div class="p-3 rounded border border-success bg-dark shadow-sm">
+          <small class="text-success text-uppercase fw-bold d-block">1. Πλήρης Συμφωνία</small>
+          <span class="fs-3 fw-bold text-success" th:text="${#lists.size(auditResult.matches)}">0</span>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Σαρώθηκαν & Ήταν Ενεργά</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3 rounded border border-danger bg-dark shadow-sm">
+          <small class="text-danger text-uppercase fw-bold d-block">2. Έλλειμμα (Missing)</small>
+          <span class="fs-3 fw-bold text-danger" th:text="${#lists.size(auditResult.missing)}">0</span>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Ενεργά στη Βάση - ΔΕΝ σαρώθηκαν</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3 rounded border border-warning bg-dark shadow-sm">
+          <small class="text-warning text-uppercase fw-bold d-block">3. Πλεόνασμα (Surplus)</small>
+          <span class="fs-3 fw-bold text-warning" th:text="${#lists.size(auditResult.surplus)}">0</span>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Σαρώθηκαν - Ήταν Εξαχθέντα</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-3 rounded border border-info bg-dark shadow-sm">
+          <small class="text-info text-uppercase fw-bold d-block">4. Άγνωστα QR</small>
+          <span class="fs-3 fw-bold text-info" th:text="${#lists.size(auditResult.unknown)}">0</span>
+          <small class="text-muted d-block" style="font-size: 0.75rem;">Δεν υπάρχουν στη βάση</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB NAVIGATION -->
+    <ul class="nav nav-tabs border-secondary mb-3" id="auditTabs" role="tablist">
+      <li class="nav-item">
+        <button class="nav-link active text-success fw-bold" id="matches-tab" data-bs-toggle="tab" data-bs-target="#matches" type="button">
+          <i class="bi bi-check-circle me-1"></i>Συμφωνούν (<span th:text="${#lists.size(auditResult.matches)}"></span>)
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link text-danger fw-bold" id="missing-tab" data-bs-toggle="tab" data-bs-target="#missing" type="button">
+          <i class="bi bi-x-circle me-1"></i>Ελλείμματα (<span th:text="${#lists.size(auditResult.missing)}"></span>)
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link text-warning fw-bold" id="surplus-tab" data-bs-toggle="tab" data-bs-target="#surplus" type="button">
+          <i class="bi bi-exclamation-triangle me-1"></i>Πλεονάσματα (<span th:text="${#lists.size(auditResult.surplus)}"></span>)
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link text-info fw-bold" id="unknown-tab" data-bs-toggle="tab" data-bs-target="#unknown" type="button">
+          <i class="bi bi-question-circle me-1"></i>Άγνωστα QR (<span th:text="${#lists.size(auditResult.unknown)}"></span>)
+        </button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="auditTabsContent">
+
+      <!-- TAB 1: ΠΛΗΡΗΣ ΣΥΜΦΩΝΙΑ -->
+      <div class="tab-pane fade show active" id="matches" role="tabpanel">
+        <div class="card card-custom p-3">
+          <table class="table table-dark table-hover mb-0 align-middle text-center small">
+            <thead>
+            <tr class="text-muted border-secondary">
+              <th>LOT Number</th>
+              <th>QR Code</th>
+              <th>Είδος</th>
+              <th>Βάρος</th>
+              <th>Κατάσταση</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="bag : ${auditResult.matches}">
+              <td class="text-info text-monospace fw-bold" th:text="${bag.lotNumber}"></td>
+              <td class="text-muted text-monospace" th:text="${bag.qrCode}"></td>
+              <td th:text="${bag.batch.productType.name() == 'OFFAL_MEAL' ? 'Πτηνάλευρο' : 'Πτεράλευρο'}"></td>
+              <td th:text="${bag.weight} + ' kg'"></td>
+              <td><span class="badge bg-success">ACTIVE</span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(auditResult.matches)}">
+              <td colspan="5" class="text-muted py-4">Δεν υπάρχουν σάκοι σε αυτή την κατηγορία.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 2: ΕΛΛΕΙΜΜΑΤΑ (MISSING) -->
+      <div class="tab-pane fade" id="missing" role="tabpanel">
+        <div class="card card-custom p-3">
+          <form th:action="@{/inventory/audit/resolve/missing}" method="post">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <small class="text-muted">Επιλέξτε τους σάκους που φορτώθηκαν χωρίς σάρωση για να ενημερωθούν ως EXPORTED:</small>
+              <button type="submit" class="btn btn-sm btn-danger fw-bold">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Σήμανση Επιλεγμένων ως EXPORTED
+              </button>
+            </div>
+            <table class="table table-dark table-hover mb-0 align-middle text-center small">
+              <thead>
+              <tr class="text-muted border-secondary">
+                <th style="width: 40px;"><input type="checkbox" id="selectAllMissing" onclick="toggleCheckboxes(this, 'missingBags')"></th>
+                <th>LOT Number</th>
+                <th>QR Code</th>
+                <th>Είδος</th>
+                <th>Βάρος</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="bag : ${auditResult.missing}">
+                <td><input type="checkbox" name="bagIds" th:value="${bag.id}" class="missingBags"></td>
+                <td class="text-danger text-monospace fw-bold" th:text="${bag.lotNumber}"></td>
+                <td class="text-muted text-monospace" th:text="${bag.qrCode}"></td>
+                <td th:text="${bag.batch.productType.name() == 'OFFAL_MEAL' ? 'Πτηνάλευρο' : 'Πτεράλευρο'}"></td>
+                <td th:text="${bag.weight} + ' kg'"></td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(auditResult.missing)}">
+                <td colspan="5" class="text-muted py-4">Κανένα έλλειμμα! Όλοι οι ενεργοί σάκοι σαρώθηκαν.</td>
+              </tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 3: ΠΛΕΟΝΑΣΜΑΤΑ (SURPLUS) -->
+      <div class="tab-pane fade" id="surplus" role="tabpanel">
+        <div class="card card-custom p-3">
+          <form th:action="@{/inventory/audit/resolve/surplus}" method="post">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <small class="text-muted">Επιλέξτε τους σάκους που παρέμειναν στην αποθήκη για επαναφορά σε ACTIVE:</small>
+              <button type="submit" class="btn btn-sm btn-warning text-dark fw-bold">
+                <i class="bi bi-arrow-return-left me-1"></i>Επαναφορά Επιλεγμένων σε ACTIVE
+              </button>
+            </div>
+            <table class="table table-dark table-hover mb-0 align-middle text-center small">
+              <thead>
+              <tr class="text-muted border-secondary">
+                <th style="width: 40px;"><input type="checkbox" id="selectAllSurplus" onclick="toggleCheckboxes(this, 'surplusBags')"></th>
+                <th>LOT Number</th>
+                <th>QR Code</th>
+                <th>Τρέχουσα Κατάσταση στη Βάση</th>
+                <th>Βάρος</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="bag : ${auditResult.surplus}">
+                <td><input type="checkbox" name="bagIds" th:value="${bag.id}" class="surplusBags"></td>
+                <td class="text-warning text-monospace fw-bold" th:text="${bag.lotNumber}"></td>
+                <td class="text-muted text-monospace" th:text="${bag.qrCode}"></td>
+                <td><span class="badge bg-secondary" th:text="${bag.status}"></span></td>
+                <td th:text="${bag.weight} + ' kg'"></td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(auditResult.surplus)}">
+                <td colspan="5" class="text-muted py-4">Δεν βρέθηκαν πλεονάσματα.</td>
+              </tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </div>
+
+      <!-- TAB 4: ΑΓΝΩΣΤΑ QR (UNKNOWN / 1-CLICK IMPORT) -->
+      <div class="tab-pane fade" id="unknown" role="tabpanel">
+        <div class="card card-custom p-3">
+          <small class="text-muted mb-3 d-block">
+            Τα παρακάτω QR codes σαρώθηκαν αλλά δεν υπάρχουν στη βάση δεδομένων. Πατήστε <strong>«Εισαγωγή ως ACTIVE»</strong> για αυτόματη αποδόμηση και εγγραφή στην αποθήκη:
+          </small>
+          <table class="table table-dark table-hover mb-0 align-middle text-center small">
+            <thead>
+            <tr class="text-muted border-secondary">
+              <th>Άγνωστο QR Code String</th>
+              <th style="width: 200px;">Ενέργεια</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="qr : ${auditResult.unknown}">
+              <td class="text-info text-monospace fw-bold" th:text="${qr}"></td>
+              <td>
+                <form th:action="@{/inventory/audit/resolve/import-unknown}" method="post" class="m-0">
+                  <input type="hidden" name="qrData" th:value="${qr}">
+                  <button type="submit" class="btn btn-sm btn-info text-dark fw-bold w-100">
+                    <i class="bi bi-plus-circle me-1"></i>Εισαγωγή ως ACTIVE
+                  </button>
+                </form>
+              </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(auditResult.unknown)}">
+              <td colspan="2" class="text-muted py-4">Δεν βρέθηκαν άγνωστα QR codes.</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function toggleCheckboxes(source, targetClass) {
+    let checkboxes = document.getElementsByClassName(targetClass);
+    for (let i = 0; i < checkboxes.length; i++) {
+      checkboxes[i].checked = source.checked;
+    }
+  }
+</script>
+</body>
+</html>
