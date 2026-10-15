@@ -27,7 +27,7 @@ public class SecurityConfig {
                 // 2. Κανόνες πρόσβασης στις διαδρομές
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                        .requestMatchers("/api/zebra/**", "/api/dispatch/**").permitAll()
+                        .requestMatchers("/api/zebra/**", "/api/dispatch/**", "/api/inventory/**").permitAll()
                         // ΜΟΝΟ ο ADMIN έχει πρόσβαση στη διαχείριση χρηστών
                         .requestMatchers("/users/**").hasAuthority("ADMIN")
                         .anyRequest().authenticated()
