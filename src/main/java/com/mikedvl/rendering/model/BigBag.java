@@ -1,5 +1,6 @@
 package com.mikedvl.rendering.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,12 +42,14 @@ public class BigBag {
 
     @ManyToOne
     @JoinColumn(name = "shipment_id")
+    @JsonIgnoreProperties({"bigBags", "bags"}) // Εμποδίζει τον κύκλο αναφοράς με το Shipment
     private Shipment shipment; // Το δρομολόγιο στο οποίο έχει δεσμευτεί
 
     private Double temperature; // Η τελευταία θερμοκρασία που καταγράφηκε
 
     @OneToMany(mappedBy = "bigBag", cascade = CascadeType.ALL)
     @OrderBy("recordedAt DESC") // Ταξινομεί αυτόματα από την πιο πρόσφατη στην παλαιότερη
+    @JsonIgnoreProperties("bigBag") // Εμποδίζει τον κύκλο αναφοράς με τα TemperatureLogs
     private List<TemperatureLog> temperatureLogs = new ArrayList<>();
 
     public Shipment getShipment() {
