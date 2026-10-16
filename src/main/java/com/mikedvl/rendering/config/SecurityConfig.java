@@ -21,8 +21,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Απενεργοποίηση προστασίας CSRF για τα APIs (Zebra & Dispatch)
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/zebra/**", "/api/dispatch/**"))
+                // 1. Απενεργοποίηση προστασίας CSRF για όλα τα REST APIs (Zebra, Dispatch & Inventory)
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/zebra/**", "/api/dispatch/**", "/api/inventory/**"))
 
                 // 2. Κανόνες πρόσβασης στις διαδρομές
                 .authorizeHttpRequests(auth -> auth
