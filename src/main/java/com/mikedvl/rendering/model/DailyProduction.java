@@ -1,5 +1,6 @@
 package com.mikedvl.rendering.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,7 @@ public class DailyProduction {
 
     // Μια ημερήσια παραγωγή έχει πολλά batches
     @OneToMany(mappedBy = "dailyProduction", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties("dailyProduction")
     private List<Batch> batches;
 
     // TODO: Generate Getters and Setters (Alt + Insert -> Getter and Setter)

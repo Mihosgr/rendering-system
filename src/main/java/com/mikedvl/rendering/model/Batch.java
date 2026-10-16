@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalTime;
 import org.springframework.format.annotation.DateTimeFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Data
 @NoArgsConstructor
@@ -18,6 +19,7 @@ public class Batch {
 
     @ManyToOne
     @JoinColumn(name = "daily_production_id", nullable = false)
+    @JsonIgnoreProperties("batches")
     private DailyProduction dailyProduction;
 
     // --- Νέα πεδία για διασύνδεση Zebra & Πίνακα ---
